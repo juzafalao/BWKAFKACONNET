@@ -1,19 +1,56 @@
+# Arquivos de projeto TIBCO BW
+*.log
+*.bak
+*.old
+*.tmp
+*.err
+*.out
+*.test
+*.prefs
+*.substvar.bak
+*.properties.bak
+
+# Arquivos gerados pelo TIBCO Designer/Engine
+bin/
+build/
+logs/
+output/
+archives/
+.data/
 .metadata/
+.settings/
+.project
+.classpath
+.factorypath
+.modulepath
+
+# Arquivos de deploy e EARs
+*.ear
+*.zip
+
+# Arquivos de configuração de ambiente local (se não forem versionados)
+# Exemplo: configurações de ambiente de desenvolvimento local que não devem ir para o Git
+# local.properties
+# application.properties
+
+# Arquivos de sistema operacional
+.DS_Store
+Thumbs.db
+
+# Arquivos de IDE (se não forem versionados)
 .idea/
 .vscode/
 *.iml
-.DS_Store
-Thumbs.db
-logs/
-*.log
-bin/
-build/
-dist/
-temp/
-tmp/
-out/
-*.ear
-*.zip
-*.class
-*.bak
-*.tmp
+*.ipr
+*.iws
+
+# Excluir pastas de dependências (se gerenciadas externamente, ex: Maven)
+m2/
+target/
+
+# Excluir arquivos de credenciais ou informações sensíveis
+# É crucial NUNCA versionar credenciais, chaves de API ou senhas.
+# Considere usar variáveis de ambiente ou um sistema de gerenciamento de segredos.
+# *.key
+# *.pem
+# passwords.txt
