@@ -1,0 +1,347 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 
+  TIBCO BusinessWorks 5.13
+  Process: KafkaPublish
+  Projeto: BWKAFKACONNECT
+  Pasta: SharedResources
+  
+  Como usar:
+    1. Copie este arquivo para: BWKAFKACONNECT/SharedResources/KafkaPublish.process
+    2. Abra o TIBCO Designer
+    3. O processo aparece em SharedResources/KafkaPublish
+    4. Outros processos chamam via "Call Process"
+-->
+<repository version="3.0.0" xmlns="http://www.tibco.com/xmlns/repo/types/2002">
+  <process-definition
+    xmlns:pd="http://xmlns.tibco.com/bw/process/2003"
+    xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+    xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+    xmlns:tib="http://www.tibco.com/bw/xslt/custom-functions"
+    xmlns:pfx="http://www.tibco.com/pe/EngineTypes">
+
+    <pd:name>SharedResources/KafkaPublish</pd:name>
+    <pd:startName>Start</pd:startName>
+    <pd:returnBindings/>
+
+    <!-- ═══════════════════════════════════════════════
+         SCHEMA DE INPUT DO PROCESSO
+         Outros processos mapeiam esses campos
+    ═══════════════════════════════════════════════ -->
+    <pd:startNamespace>
+      <xsd:schema
+        targetNamespace="http://www.tibco.com/xmlns/bwkafka/publish/input"
+        xmlns:tns="http://www.tibco.com/xmlns/bwkafka/publish/input"
+        elementFormDefault="qualified">
+
+        <xsd:element name="KafkaPublishInput">
+          <xsd:complexType>
+            <xsd:sequence>
+
+              <!-- Tópico destino -->
+              <xsd:element name="topic"   type="xsd:string" minOccurs="1" maxOccurs="1"/>
+
+              <!-- Chave da mensagem (opcional) -->
+              <xsd:element name="key"     type="xsd:string" minOccurs="0" maxOccurs="1"/>
+
+              <!-- Corpo da mensagem -->
+              <xsd:element name="message" type="xsd:string" minOccurs="1" maxOccurs="1"/>
+
+              <!-- Headers opcionais -->
+              <xsd:element name="headers" minOccurs="0" maxOccurs="1">
+                <xsd:complexType>
+                  <xsd:sequence>
+                    <xsd:element name="header" minOccurs="0" maxOccurs="unbounded">
+                      <xsd:complexType>
+                        <xsd:sequence>
+                          <xsd:element name="key"   type="xsd:string" minOccurs="1"/>
+                          <xsd:element name="value" type="xsd:string" minOccurs="1"/>
+                        </xsd:sequence>
+                      </xsd:complexType>
+                    </xsd:element>
+                  </xsd:sequence>
+                </xsd:complexType>
+              </xsd:element>
+
+            </xsd:sequence>
+          </xsd:complexType>
+        </xsd:element>
+
+      </xsd:schema>
+    </pd:startNamespace>
+
+    <!-- ═══════════════════════════════════════════════
+         SCHEMA DE OUTPUT DO PROCESSO
+         Retornado após o envio
+    ═══════════════════════════════════════════════ -->
+    <pd:endName>End</pd:endName>
+    <pd:endNamespace>
+      <xsd:schema
+        targetNamespace="http://www.tibco.com/xmlns/bwkafka/publish/output"
+        xmlns:tns="http://www.tibco.com/xmlns/bwkafka/publish/output"
+        elementFormDefault="qualified">
+
+        <xsd:element name="KafkaPublishOutput">
+          <xsd:complexType>
+            <xsd:sequence>
+              <xsd:element name="status"    type="xsd:string"  minOccurs="1"/>
+              <xsd:element name="topic"     type="xsd:string"  minOccurs="0"/>
+              <xsd:element name="partition" type="xsd:integer" minOccurs="0"/>
+              <xsd:element name="offset"    type="xsd:long"    minOccurs="0"/>
+              <xsd:element name="errorMessage" type="xsd:string" minOccurs="0"/>
+            </xsd:sequence>
+          </xsd:complexType>
+        </xsd:element>
+
+      </xsd:schema>
+    </pd:endNamespace>
+
+    <!-- ═══════════════════════════════════════════════
+         VARIÁVEIS DO PROCESSO
+    ═══════════════════════════════════════════════ -->
+    <pd:processVariables>
+
+      <!-- Variável que guarda o resultado da Java Activity -->
+      <xsd:element name="JavaResult">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="status"    type="xsd:string"/>
+            <xsd:element name="topic"     type="xsd:string"/>
+            <xsd:element name="partition" type="xsd:integer"/>
+            <xsd:element name="offset"    type="xsd:long"/>
+            <xsd:element name="errorMessage" type="xsd:string"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+    </pd:processVariables>
+
+    <!-- ═══════════════════════════════════════════════
+         ATIVIDADES DO PROCESSO
+    ═══════════════════════════════════════════════ -->
+    <pd:activities>
+
+      <!-- ─────────────────────────────
+           ATIVIDADE 1: START
+      ───────────────────────────── -->
+      <pd:activity name="Start">
+        <pd:type>com.tibco.pe.core.StartEventActivity</pd:type>
+        <pd:resourceType>ae.activities.StartEventActivity</pd:resourceType>
+        <pd:x>80</pd:x>
+        <pd:y>150</pd:y>
+        <config/>
+        <pd:outputBindings>
+          <xsl:template name="Start">
+            <KafkaPublishInput xmlns="http://www.tibco.com/xmlns/bwkafka/publish/input"/>
+          </xsl:template>
+        </pd:outputBindings>
+      </pd:activity>
+
+      <!-- ─────────────────────────────
+           ATIVIDADE 2: Java Activity — KafkaSendMessageService
+           Esta é a actividade central que chama o JAR Java
+      ───────────────────────────── -->
+      <pd:activity name="KafkaSendMessage">
+        <pd:type>com.tibco.plugin.java.JavaActivity</pd:type>
+        <pd:resourceType>ae.activities.JavaActivity</pd:resourceType>
+        <pd:x>280</pd:x>
+        <pd:y>150</pd:y>
+        <config>
+          <!-- 
+            ATENÇÃO: Preencher no Designer após copiar o arquivo:
+            1. Clique na activity KafkaSendMessage
+            2. Aba "Configuration"
+            3. Em "Class Name" coloque: com.empresa.kafka.bw.service.KafkaSendMessageService
+            4. Em "Method Name" coloque: sendFromBW
+            
+            O método sendFromBW recebe os dados do processo e retorna o resultado.
+            Ver KafkaSendMessageService.java para implementação completa.
+          -->
+          <pd:className>com.empresa.kafka.bw.service.KafkaSendMessageService</pd:className>
+          <pd:methodName>sendFromBW</pd:methodName>
+        </config>
+
+        <!-- Input da Java Activity — mapeado a partir do Start -->
+        <pd:inputBindings>
+          <xsl:template name="KafkaSendMessage">
+            <JavaInput>
+              <!-- Bootstrap Servers — lido do Module Property -->
+              <bootstrapServers>
+                <xsl:value-of select="$_globalVariables/GlobalVariables/KafkaBootstrapServers"/>
+              </bootstrapServers>
+              <!-- Username — lido do Module Property -->
+              <authUsername>
+                <xsl:value-of select="$_globalVariables/GlobalVariables/KafkaUsername"/>
+              </authUsername>
+              <!-- Password — lido do Module Property -->
+              <authPassword>
+                <xsl:value-of select="$_globalVariables/GlobalVariables/KafkaPassword"/>
+              </authPassword>
+              <!-- Dados da mensagem — vêm do input do processo -->
+              <topic>
+                <xsl:value-of select="$Start/topic"/>
+              </topic>
+              <key>
+                <xsl:value-of select="$Start/key"/>
+              </key>
+              <message>
+                <xsl:value-of select="$Start/message"/>
+              </message>
+              <!-- Headers serializados como string JSON simples -->
+              <headers>
+                <xsl:for-each select="$Start/headers/header">
+                  <header>
+                    <key><xsl:value-of select="key"/></key>
+                    <value><xsl:value-of select="value"/></value>
+                  </header>
+                </xsl:for-each>
+              </headers>
+            </JavaInput>
+          </xsl:template>
+        </pd:inputBindings>
+
+      </pd:activity>
+
+      <!-- ─────────────────────────────
+           ATIVIDADE 3: Mapper — Monta output SUCCESS
+      ───────────────────────────── -->
+      <pd:activity name="MapOutputSuccess">
+        <pd:type>com.tibco.plugin.mapper.MapperActivity</pd:type>
+        <pd:resourceType>ae.activities.MapperActivity</pd:resourceType>
+        <pd:x>480</pd:x>
+        <pd:y>100</pd:y>
+        <config>
+          <pd:inputSchema>
+            <xsd:schema>
+              <xsd:element name="dummy" type="xsd:string"/>
+            </xsd:schema>
+          </pd:inputSchema>
+        </config>
+        <pd:inputBindings>
+          <xsl:template name="MapOutputSuccess">
+            <KafkaPublishOutput xmlns="http://www.tibco.com/xmlns/bwkafka/publish/output">
+              <status>SUCCESS</status>
+              <topic>
+                <xsl:value-of select="$KafkaSendMessage/topic"/>
+              </topic>
+              <partition>
+                <xsl:value-of select="$KafkaSendMessage/partition"/>
+              </partition>
+              <offset>
+                <xsl:value-of select="$KafkaSendMessage/offset"/>
+              </offset>
+              <errorMessage></errorMessage>
+            </KafkaPublishOutput>
+          </xsl:template>
+        </pd:inputBindings>
+      </pd:activity>
+
+      <!-- ─────────────────────────────
+           ATIVIDADE 4: Mapper — Monta output ERROR
+           (usado no fault handler)
+      ───────────────────────────── -->
+      <pd:activity name="MapOutputError">
+        <pd:type>com.tibco.plugin.mapper.MapperActivity</pd:type>
+        <pd:resourceType>ae.activities.MapperActivity</pd:resourceType>
+        <pd:x>480</pd:x>
+        <pd:y>250</pd:y>
+        <config/>
+        <pd:inputBindings>
+          <xsl:template name="MapOutputError">
+            <KafkaPublishOutput xmlns="http://www.tibco.com/xmlns/bwkafka/publish/output">
+              <status>ERROR</status>
+              <topic>
+                <xsl:value-of select="$Start/topic"/>
+              </topic>
+              <partition>-1</partition>
+              <offset>-1</offset>
+              <errorMessage>
+                <xsl:value-of select="$_error/pfx:ErrorReport/pfx:Msg"/>
+              </errorMessage>
+            </KafkaPublishOutput>
+          </xsl:template>
+        </pd:inputBindings>
+      </pd:activity>
+
+      <!-- ─────────────────────────────
+           ATIVIDADE 5: END
+      ───────────────────────────── -->
+      <pd:activity name="End">
+        <pd:type>com.tibco.pe.core.EndActivity</pd:type>
+        <pd:resourceType>ae.activities.EndActivity</pd:resourceType>
+        <pd:x>680</pd:x>
+        <pd:y>150</pd:y>
+        <config/>
+        <pd:inputBindings>
+          <xsl:template name="End">
+            <KafkaPublishOutput xmlns="http://www.tibco.com/xmlns/bwkafka/publish/output">
+              <xsl:choose>
+                <xsl:when test="$MapOutputSuccess">
+                  <xsl:copy-of select="$MapOutputSuccess/*"/>
+                </xsl:when>
+                <xsl:otherwise>
+                  <xsl:copy-of select="$MapOutputError/*"/>
+                </xsl:otherwise>
+              </xsl:choose>
+            </KafkaPublishOutput>
+          </xsl:template>
+        </pd:inputBindings>
+      </pd:activity>
+
+    </pd:activities>
+
+    <!-- ═══════════════════════════════════════════════
+         TRANSIÇÕES (ligações entre activities)
+    ═══════════════════════════════════════════════ -->
+    <pd:transitions>
+
+      <pd:transition>
+        <pd:from>Start</pd:from>
+        <pd:to>KafkaSendMessage</pd:to>
+        <pd:lineType>Default</pd:lineType>
+      </pd:transition>
+
+      <pd:transition>
+        <pd:from>KafkaSendMessage</pd:from>
+        <pd:to>MapOutputSuccess</pd:to>
+        <pd:lineType>Default</pd:lineType>
+      </pd:transition>
+
+      <pd:transition>
+        <pd:from>MapOutputSuccess</pd:from>
+        <pd:to>End</pd:to>
+        <pd:lineType>Default</pd:lineType>
+      </pd:transition>
+
+      <!-- Transição de erro — vai para MapOutputError -->
+      <pd:transition>
+        <pd:from>KafkaSendMessage</pd:from>
+        <pd:to>MapOutputError</pd:to>
+        <pd:lineType>ExceptionHandler</pd:lineType>
+        <pd:conditionType>error</pd:conditionType>
+      </pd:transition>
+
+      <pd:transition>
+        <pd:from>MapOutputError</pd:from>
+        <pd:to>End</pd:to>
+        <pd:lineType>Default</pd:lineType>
+      </pd:transition>
+
+    </pd:transitions>
+
+    <!-- ═══════════════════════════════════════════════
+         GLOBAL VARIABLES (Module Properties no BW 5)
+         Defina essas variáveis no Designer:
+         Project > Module Properties
+    ═══════════════════════════════════════════════ -->
+    <!--
+      Variáveis necessárias (criar em: Project > Module Properties):
+
+      KafkaBootstrapServers  = broker1:9092,broker2:9092
+      KafkaUsername          = seu-usuario
+      KafkaPassword          = sua-senha
+      KafkaSecurityProtocol  = SASL_SSL
+      KafkaSaslMechanism     = SCRAM-SHA-512
+    -->
+
+  </process-definition>
+</repository>
